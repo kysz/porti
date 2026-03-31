@@ -38,8 +38,24 @@ Current app shell features:
 - profile apply, rename, duplicate, delete, and overwrite flows
 - active profile tracking with `Custom` drift state
 - optional apply confirmation
+- Sparkle updater integration with `Check for Updates...` plus updater preferences when the release app bundle is configured
 - optional notifications for saves, applies, warnings, and errors
 - launch-at-login toggle, with graceful failure for development-style runs that cannot register themselves
+
+## Auto-Update
+
+Porti now includes Sparkle-based updater integration for GitHub distribution. Local SwiftPM runs will show updater configuration as unavailable until the shipped app bundle includes `SUFeedURL` and `SUPublicEDKey`.
+
+Release setup notes live in [docs/auto-update.md](./docs/auto-update.md).
+
+To package a distributable app bundle:
+
+```bash
+PORTI_VERSION="0.1.0" \
+PORTI_BUILD="1" \
+PORTI_SPARKLE_PUBLIC_KEY="YOUR_BASE64_PUBLIC_KEY" \
+./scripts/package-app.sh
+```
 
 ## Spike Commands
 

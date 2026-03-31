@@ -2,3 +2,4 @@
 DerivedData/
 artifacts/
 .local-build/
+dist/

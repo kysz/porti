@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version, for example 0.1.0
+        required: true
+      build:
+        description: Build number, for example 1
+        required: true
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-release:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    env:
+      PORTI_APPCAST_URL: https://zhouk.github.io/porti/appcast.xml
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Resolve release version
+        id: release-meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF_TYPE:-}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+
+          if [[ -n "${{ github.event.inputs.build }}" ]]; then
+            BUILD="${{ github.event.inputs.build }}"
+          else
+            BUILD="1"
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+
+      - name: Build distributable app bundle
+        env:
+          PORTI_VERSION: ${{ steps.release-meta.outputs.version }}
+          PORTI_BUILD: ${{ steps.release-meta.outputs.build }}
+          PORTI_SPARKLE_PUBLIC_KEY: ${{ secrets.PORTI_SPARKLE_PUBLIC_KEY }}
+        run: ./scripts/package-app.sh
+
+      - name: Upload packaged zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Porti-${{ steps.release-meta.outputs.version }}
+          path: dist/Porti-${{ steps.release-meta.outputs.version }}.zip
+
+      - name: Create or update GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.release-meta.outputs.version }}
+          generate_release_notes: true
+          files: |
+            dist/Porti-${{ steps.release-meta.outputs.version }}.zip
+
+      - name: Appcast reminder
+        shell: bash
+        run: |
+          cat <<'EOF'
+          Release zip uploaded.
+
+          To publish Sparkle metadata you still need to:
+          1. Run scripts/generate-appcast.sh against a folder containing the released zip
+          2. Publish appcast.xml and related files to GitHub Pages
+
+          This workflow does not export or import the private Sparkle signing key from Keychain.
+          EOF

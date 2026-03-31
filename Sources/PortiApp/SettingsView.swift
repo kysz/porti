@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var appState: AppState
+    @ObservedObject var appUpdater: AppUpdater
 
     var body: some View {
         Form {
@@ -32,6 +33,36 @@ struct SettingsView: View {
                 )
             }
 
+            Section("Updates") {
+                Toggle(
+                    "Automatically check for updates",
+                    isOn: Binding(
+                        get: { appUpdater.automaticallyChecksForUpdates },
+                        set: { appUpdater.setAutomaticallyChecksForUpdates($0) }
+                    )
+                )
+                .disabled(!appUpdater.isConfigured)
+
+                Toggle(
+                    "Automatically download updates",
+                    isOn: Binding(
+                        get: { appUpdater.automaticallyDownloadsUpdates },
+                        set: { appUpdater.setAutomaticallyDownloadsUpdates($0) }
+                    )
+                )
+                .disabled(!appUpdater.isConfigured || !appUpdater.automaticallyChecksForUpdates)
+
+                if let configurationIssue = appUpdater.configurationIssue {
+                    Text(configurationIssue)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Sparkle stores these updater preferences in the app’s defaults. Install Porti from an app bundle in Applications for the smoothest update flow.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             Section("System") {
                 Toggle(
                     "Launch at login",
@@ -48,6 +79,6 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .padding(16)
-        .frame(minWidth: 520, minHeight: 397)
+        .frame(minWidth: 520, minHeight: 470)
     }
 }

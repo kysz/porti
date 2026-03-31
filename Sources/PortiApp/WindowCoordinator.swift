@@ -12,8 +12,8 @@ final class WindowCoordinator: NSObject, ObservableObject, NSWindowDelegate {
         present(window: window)
     }
 
-    func showSettings(appState: AppState) {
-        let window = settingsWindow ?? makeSettingsWindow(appState: appState)
+    func showSettings(appState: AppState, appUpdater: AppUpdater) {
+        let window = settingsWindow ?? makeSettingsWindow(appState: appState, appUpdater: appUpdater)
         settingsWindow = window
         present(window: window)
     }
@@ -46,15 +46,15 @@ final class WindowCoordinator: NSObject, ObservableObject, NSWindowDelegate {
         return window
     }
 
-    private func makeSettingsWindow(appState: AppState) -> NSWindow {
+    private func makeSettingsWindow(appState: AppState, appUpdater: AppUpdater) -> NSWindow {
         let window = makeWindow(
             title: "Settings",
             identifier: "settings",
-            frame: NSRect(x: 0, y: 0, width: 520, height: 397),
+            frame: NSRect(x: 0, y: 0, width: 520, height: 470),
             isResizable: false,
-            rootView: SettingsView(appState: appState)
+            rootView: SettingsView(appState: appState, appUpdater: appUpdater)
         )
-        window.contentMinSize = NSSize(width: 520, height: 397)
+        window.contentMinSize = NSSize(width: 520, height: 470)
         settingsWindow = window
         return window
     }

@@ -3,6 +3,7 @@ import SwiftUI
 
 struct MenuBarContentView: View {
     @ObservedObject var appState: AppState
+    @ObservedObject var appUpdater: AppUpdater
     @ObservedObject var windowCoordinator: WindowCoordinator
 
     var body: some View {
@@ -58,10 +59,17 @@ struct MenuBarContentView: View {
             }
 
             Button {
-                windowCoordinator.showSettings(appState: appState)
+                windowCoordinator.showSettings(appState: appState, appUpdater: appUpdater)
             } label: {
                 Label("Settings", systemImage: "gearshape")
             }
+
+            Button {
+                appUpdater.checkForUpdates()
+            } label: {
+                Label("Check for Updates...", systemImage: "arrow.triangle.2.circlepath")
+            }
+            .disabled(!appUpdater.isConfigured || !appUpdater.canCheckForUpdates)
 
             if let warningMessage = appState.warningMessage {
                 Divider()

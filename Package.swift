@@ -21,6 +21,9 @@ let package = Package(
             targets: ["PortiApp"]
         ),
     ],
+    dependencies: [
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.7.3"),
+    ],
     targets: [
         .target(
             name: "PortiCore"
@@ -31,7 +34,10 @@ let package = Package(
         ),
         .executableTarget(
             name: "PortiApp",
-            dependencies: ["PortiCore"]
+            dependencies: [
+                "PortiCore",
+                .product(name: "Sparkle", package: "Sparkle"),
+            ]
         ),
         .testTarget(
             name: "PortiCoreTests",
