@@ -1,0 +1,21 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Porti</title>
+        <item>
+            <title>0.1.0</title>
+            <pubDate>Tue, 31 Mar 2026 16:11:31 -0700</pubDate>
+            <sparkle:version>1</sparkle:version>
+            <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[# Porti 0.1.0
+
+- Initial GitHub release
+- Sparkle-based update channel scaffolding
+- Dock profile management and switching menu bar app
+]]></description>
+            <enclosure url="https://github.com/zhouk/porti/releases/download/v0.1.0/Porti-0.1.0.zip" length="1322043" type="application/octet-stream" sparkle:edSignature="Oh/rt78cTQbjViZwWURt9gcD74Wt9p0fLi0XZfrPmmnuxFujAJxA6w32Wlx4cw4SCZc67i1XwNBO62hb+OyODA=="/>
+        </item>
+    </channel>
+</rss>
