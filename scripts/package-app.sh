@@ -52,6 +52,10 @@ mkdir -p \
 cp "$EXECUTABLE_PATH" "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 cp -R "$SPARKLE_FRAMEWORK_PATH" "$APP_BUNDLE/Contents/Frameworks/"
 
+if command -v install_name_tool >/dev/null 2>&1; then
+  install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP_BUNDLE/Contents/MacOS/$APP_NAME" 2>/dev/null || true
+fi
+
 sed \
   -e "s|__APP_NAME__|$APP_NAME|g" \
   -e "s|__EXECUTABLE_NAME__|$APP_NAME|g" \
