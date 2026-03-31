@@ -14,12 +14,12 @@ When those keys are missing, Porti disables update actions and shows a configura
 ## GitHub Release Layout
 
 - Host versioned archives (`.zip` or `.dmg`) on GitHub Releases
-- Host `appcast.xml` and release-note files on GitHub Pages
+- Host `appcast.xml` and release-note files on a public branch or static host
 - Sign update archives with Sparkle's EdDSA key
 
 Recommended URLs:
 
-- appcast: `https://zhouk.github.io/porti/appcast.xml`
+- appcast: `https://raw.githubusercontent.com/zhouk/porti/gh-pages/appcast.xml`
 - releases: `https://github.com/zhouk/porti/releases`
 
 ## One-Time Sparkle Setup
@@ -42,7 +42,7 @@ Your packaged `Porti.app/Contents/Info.plist` needs values like:
 <key>CFBundleVersion</key>
 <string>1</string>
 <key>SUFeedURL</key>
-<string>https://zhouk.github.io/porti/appcast.xml</string>
+<string>https://raw.githubusercontent.com/zhouk/porti/gh-pages/appcast.xml</string>
 <key>SUPublicEDKey</key>
 <string>YOUR_BASE64_PUBLIC_KEY</string>
 ```
@@ -76,7 +76,7 @@ That script:
 2. Place the generated `.zip` archive in a local updates folder.
 3. Run `generate_appcast` from the Sparkle distribution against that folder.
 4. Upload the archive to GitHub Releases.
-5. Publish `appcast.xml`, delta files, and optional release notes to GitHub Pages.
+5. Publish `appcast.xml`, delta files, and optional release notes to a public branch or static host.
 
 ## GitHub Actions
 
@@ -93,6 +93,8 @@ Required secret:
 - `PORTI_SPARKLE_PUBLIC_KEY`
 
 The workflow intentionally does **not** generate the appcast yet, because Sparkle's `generate_appcast` depends on the private signing key being available in a macOS keychain. Keeping that step manual avoids storing or importing the private key into GitHub Actions until you decide how you want to handle that securely.
+
+This repo currently uses the raw GitHub URL for the `gh-pages` branch instead of GitHub Pages itself, because GitHub Pages is not available on the current repository plan.
 
 ## Helper Script
 

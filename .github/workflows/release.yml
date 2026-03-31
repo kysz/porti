@@ -20,7 +20,7 @@ jobs:
       contents: write
 
     env:
-      PORTI_APPCAST_URL: https://zhouk.github.io/porti/appcast.xml
+      PORTI_APPCAST_URL: https://raw.githubusercontent.com/zhouk/porti/gh-pages/appcast.xml
 
     steps:
       - name: Check out repository
@@ -75,7 +75,7 @@ jobs:
 
           To publish Sparkle metadata you still need to:
           1. Run scripts/generate-appcast.sh against a folder containing the released zip
-          2. Publish appcast.xml and related files to GitHub Pages
+          2. Publish appcast.xml and related files to the public gh-pages branch (or another static host)
 
           This workflow does not export or import the private Sparkle signing key from Keychain.
           EOF
