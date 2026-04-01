@@ -32,7 +32,7 @@ struct AboutView: View {
             }
 
             Link(destination: AppMetadata.repositoryURL) {
-                Label("github.com/krisphere/porti", systemImage: "link")
+                Label("github.com/kysz/porti", systemImage: "link")
                     .font(.body)
             }
             .buttonStyle(.link)

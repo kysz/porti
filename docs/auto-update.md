@@ -2,6 +2,8 @@
 
 Porti uses Sparkle 2 for GitHub-distributed updates.
 
+For the release runbook, key backup steps, and restore commands, see [release-checklist.md](./release-checklist.md).
+
 The current app integrates Sparkle at runtime, but Sparkle is only considered configured when the shipped app bundle contains these `Info.plist` keys:
 
 - `SUFeedURL`
@@ -19,8 +21,8 @@ When those keys are missing, Porti disables update actions and shows a configura
 
 Recommended URLs:
 
-- appcast: `https://github.com/krisphere/porti/releases/latest/download/appcast.xml`
-- releases: `https://github.com/krisphere/porti/releases`
+- appcast: `https://github.com/kysz/porti/releases/latest/download/appcast.xml`
+- releases: `https://github.com/kysz/porti/releases`
 
 ## One-Time Sparkle Setup
 
@@ -30,7 +32,7 @@ Download a Sparkle release distribution from the Sparkle project and unpack it l
 ./bin/generate_keys
 ```
 
-This stores the private key in your login keychain and prints the public EdDSA key. Copy the public key into the shipped app bundle's `SUPublicEDKey`.
+This stores the private key in your login keychain and prints the public EdDSA key. Export the private key with `./bin/generate_keys -x /secure/path/porti_sparkle_private_key` and keep that file backed up separately.
 
 ## Bundle Configuration
 
@@ -38,13 +40,13 @@ Your packaged `Porti.app/Contents/Info.plist` needs values like:
 
 ```xml
 <key>CFBundleShortVersionString</key>
-<string>0.1.3</string>
+<string>0.1.4</string>
 <key>CFBundleVersion</key>
 <string>1</string>
 <key>SUFeedURL</key>
-<string>https://github.com/krisphere/porti/releases/latest/download/appcast.xml</string>
+<string>https://github.com/kysz/porti/releases/latest/download/appcast.xml</string>
 <key>SUPublicEDKey</key>
-<string>YOUR_BASE64_PUBLIC_KEY</string>
+<string>1lnMBb7o0WzU8i/RDS+2oLm4G2m3FfCDvy6GpC4Duo0=</string>
 ```
 
 This repo includes a packaging template and script for that:
@@ -55,9 +57,8 @@ This repo includes a packaging template and script for that:
 Example:
 
 ```bash
-PORTI_VERSION="0.1.3" \
+PORTI_VERSION="0.1.4" \
 PORTI_BUILD="1" \
-PORTI_SPARKLE_PUBLIC_KEY="YOUR_BASE64_PUBLIC_KEY" \
 ./scripts/package-app.sh
 ```
 
@@ -87,10 +88,6 @@ Current behavior:
 - builds `dist/Porti-<version>.zip`
 - uploads the zip as a workflow artifact
 - creates or updates a GitHub release
-
-Required secret:
-
-- `PORTI_SPARKLE_PUBLIC_KEY`
 
 The workflow intentionally does **not** generate the appcast yet, because Sparkle's `generate_appcast` depends on the private signing key being available in a macOS keychain. Keeping that step manual avoids storing or importing the private key into GitHub Actions until you decide how you want to handle that securely.
 

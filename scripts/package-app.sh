@@ -4,10 +4,10 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME="${PORTI_APP_NAME:-Porti}"
 EXECUTABLE_NAME="PortiApp"
-BUNDLE_IDENTIFIER="${PORTI_BUNDLE_IDENTIFIER:-io.github.krisphere.porti}"
-VERSION="${PORTI_VERSION:-0.1.3}"
-APPCAST_URL="${PORTI_APPCAST_URL:-https://github.com/krisphere/porti/releases/latest/download/appcast.xml}"
-SPARKLE_PUBLIC_KEY="${PORTI_SPARKLE_PUBLIC_KEY:-}"
+BUNDLE_IDENTIFIER="${PORTI_BUNDLE_IDENTIFIER:-io.github.kysz.porti}"
+VERSION="${PORTI_VERSION:-0.1.4}"
+APPCAST_URL="${PORTI_APPCAST_URL:-https://github.com/kysz/porti/releases/latest/download/appcast.xml}"
+SPARKLE_PUBLIC_KEY="${PORTI_SPARKLE_PUBLIC_KEY:-1lnMBb7o0WzU8i/RDS+2oLm4G2m3FfCDvy6GpC4Duo0=}"
 APP_ICON_SOURCE="${PORTI_APP_ICON_SOURCE:-$ROOT_DIR/packaging/AppIconSource/porti.png}"
 CONFIGURATION="${CONFIGURATION:-release}"
 OUTPUT_DIR="${OUTPUT_DIR:-$ROOT_DIR/dist}"
@@ -59,11 +59,6 @@ render_icon() {
   rm -rf "$iconset_dir"
 }
 
-if [[ -z "$SPARKLE_PUBLIC_KEY" ]]; then
-  echo "PORTI_SPARKLE_PUBLIC_KEY must be set to your Sparkle SUPublicEDKey" >&2
-  exit 1
-fi
-
 cd "$ROOT_DIR"
 
 swift build -c "$CONFIGURATION"
@@ -96,6 +91,12 @@ mkdir -p \
 cp "$EXECUTABLE_PATH" "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 cp -R "$SPARKLE_FRAMEWORK_PATH" "$APP_BUNDLE/Contents/Frameworks/"
 render_icon "$APP_ICON_SOURCE" "$APP_BUNDLE/Contents/Resources/AppIcon.icns"
+
+shopt -s nullglob
+for resource_bundle in "$BIN_DIR"/*.bundle; do
+  cp -R "$resource_bundle" "$APP_BUNDLE/Contents/Resources/"
+done
+shopt -u nullglob
 
 if command -v install_name_tool >/dev/null 2>&1; then
   install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP_BUNDLE/Contents/MacOS/$APP_NAME" 2>/dev/null || true
