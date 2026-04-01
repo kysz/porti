@@ -37,6 +37,9 @@ let package = Package(
             dependencies: [
                 "PortiCore",
                 .product(name: "Sparkle", package: "Sparkle"),
+            ],
+            resources: [
+                .process("Resources"),
             ]
         ),
         .testTarget(

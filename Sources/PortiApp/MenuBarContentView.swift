@@ -58,6 +58,8 @@ struct MenuBarContentView: View {
                 Label("Manage Profiles", systemImage: "square.and.pencil")
             }
 
+            Divider()
+
             Button {
                 windowCoordinator.showSettings(appState: appState, appUpdater: appUpdater)
             } label: {
@@ -70,6 +72,12 @@ struct MenuBarContentView: View {
                 Label("Check for Updates...", systemImage: "arrow.triangle.2.circlepath")
             }
             .disabled(!appUpdater.isConfigured || !appUpdater.canCheckForUpdates)
+
+            Button {
+                windowCoordinator.showAbout()
+            } label: {
+                Label("About Porti", systemImage: "info.circle")
+            }
 
             if let warningMessage = appState.warningMessage {
                 Divider()

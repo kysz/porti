@@ -7,6 +7,12 @@ struct PortiAppMain: App {
     @StateObject private var appUpdater = AppUpdater()
     @StateObject private var windowCoordinator = WindowCoordinator()
 
+    init() {
+        if let bundledIconImage = AppMetadata.bundledIconImage {
+            NSApplication.shared.applicationIconImage = bundledIconImage
+        }
+    }
+
     var body: some Scene {
         MenuBarExtra("Porti", systemImage: "dock.rectangle") {
             MenuBarContentView(

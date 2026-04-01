@@ -5,6 +5,7 @@ import SwiftUI
 final class WindowCoordinator: NSObject, ObservableObject, NSWindowDelegate {
     private var manageProfilesWindow: NSWindow?
     private var settingsWindow: NSWindow?
+    private var aboutWindow: NSWindow?
 
     func showManageProfiles(appState: AppState) {
         let window = manageProfilesWindow ?? makeManageProfilesWindow(appState: appState)
@@ -18,6 +19,12 @@ final class WindowCoordinator: NSObject, ObservableObject, NSWindowDelegate {
         present(window: window)
     }
 
+    func showAbout() {
+        let window = aboutWindow ?? makeAboutWindow()
+        aboutWindow = window
+        present(window: window)
+    }
+
     func windowWillClose(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else {
             return
@@ -27,9 +34,11 @@ final class WindowCoordinator: NSObject, ObservableObject, NSWindowDelegate {
             manageProfilesWindow = nil
         } else if window == settingsWindow {
             settingsWindow = nil
+        } else if window == aboutWindow {
+            aboutWindow = nil
         }
 
-        if manageProfilesWindow == nil && settingsWindow == nil {
+        if manageProfilesWindow == nil && settingsWindow == nil && aboutWindow == nil {
             NSApplication.shared.setActivationPolicy(.accessory)
         }
     }
@@ -56,6 +65,19 @@ final class WindowCoordinator: NSObject, ObservableObject, NSWindowDelegate {
         )
         window.contentMinSize = NSSize(width: 520, height: 470)
         settingsWindow = window
+        return window
+    }
+
+    private func makeAboutWindow() -> NSWindow {
+        let window = makeWindow(
+            title: "About Porti",
+            identifier: "about",
+            frame: NSRect(x: 0, y: 0, width: 420, height: 300),
+            isResizable: false,
+            rootView: AboutView()
+        )
+        window.contentMinSize = NSSize(width: 420, height: 300)
+        aboutWindow = window
         return window
     }
 
