@@ -5,7 +5,7 @@ struct SettingsView: View {
     @ObservedObject var appUpdater: AppUpdater
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 0) {
             SettingsSectionCard("Apply Behavior") {
                 Toggle(
                     "Confirm before applying a profile",
@@ -34,7 +34,18 @@ struct SettingsView: View {
                 SettingsCaption("Porti will only ask apps that are not in the target Dock profile to quit normally. Apps can still keep running if you cancel their save prompts.")
             }
 
-            SettingsSectionCard("Updates") {
+            Divider()
+
+            SettingsSectionCard(
+                "Updates",
+                headerAccessory: {
+                    Button("Check for Updates") {
+                        appUpdater.checkForUpdates()
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(!appUpdater.isConfigured || !appUpdater.canCheckForUpdates)
+                }
+            ) {
                 Toggle(
                     "Automatically check for updates",
                     isOn: Binding(
@@ -53,22 +64,9 @@ struct SettingsView: View {
                 )
                 .disabled(!appUpdater.isConfigured || !appUpdater.automaticallyChecksForUpdates)
 
-                HStack {
-                    Spacer()
-
-                    Button("Check for Updates...") {
-                        appUpdater.checkForUpdates()
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(!appUpdater.isConfigured || !appUpdater.canCheckForUpdates)
-                }
-
-                if let configurationIssue = appUpdater.configurationIssue {
-                    SettingsCaption(configurationIssue)
-                } else {
-                    SettingsCaption("Sparkle stores these updater preferences in the app’s defaults. Install Porti from an app bundle in Applications for the smoothest update flow.")
-                }
             }
+
+            Divider()
 
             SettingsSectionCard("System") {
                 Toggle(
@@ -78,8 +76,6 @@ struct SettingsView: View {
                         set: { appState.updateLaunchAtLogin($0) }
                     )
                 )
-
-                SettingsCaption("Launch at login may fail for ad hoc or development builds that are not installed as a normal app bundle.")
             }
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -88,18 +84,30 @@ struct SettingsView: View {
 
 private struct SettingsSectionCard<Content: View>: View {
     let title: String
+    @ViewBuilder let headerAccessory: () -> AnyView
     @ViewBuilder let content: () -> Content
 
-    init(_ title: String, @ViewBuilder content: @escaping () -> Content) {
+    init(
+        _ title: String,
+        @ViewBuilder headerAccessory: @escaping () -> some View = { EmptyView() },
+        @ViewBuilder content: @escaping () -> Content
+    ) {
         self.title = title
+        self.headerAccessory = { AnyView(headerAccessory()) }
         self.content = content
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(title)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.secondary)
+            HStack(alignment: .center, spacing: 10) {
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.secondary)
+
+                Spacer(minLength: 0)
+
+                headerAccessory()
+            }
 
             VStack(alignment: .leading, spacing: 12) {
                 content()

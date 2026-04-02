@@ -15,33 +15,38 @@ struct AboutView: View {
     }
 
     var body: some View {
-        VStack(spacing: 18) {
-            Image(nsImage: iconImage)
-                .resizable()
-                .interpolation(.high)
-                .frame(width: 96, height: 96)
-                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+        HStack {
+            Spacer(minLength: 0)
 
-            VStack(spacing: 6) {
-                Text("Porti")
-                    .font(.system(size: 28, weight: .semibold))
-                Text("Version \(shortVersion) • Build \(buildVersion)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            HStack(alignment: .center, spacing: 20) {
+                Image(nsImage: iconImage)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 96, height: 96)
+                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Porti")
+                        .font(.system(size: 28, weight: .semibold))
+
+                    Text("Version \(shortVersion) • Build \(buildVersion)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    Text("© Kris Zhou. MIT License.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    Link(destination: AppMetadata.repositoryURL) {
+                        Label("GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
+                            .font(.body)
+                    }
+                    .buttonStyle(.link)
+                }
             }
 
-            Link(destination: AppMetadata.repositoryURL) {
-                Label("github.com/kysz/porti", systemImage: "link")
-                    .font(.body)
-            }
-            .buttonStyle(.link)
-
-            Text("Save Dock profiles and switch between them from the menu bar.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 320)
+            Spacer(minLength: 0)
         }
         .padding(.vertical, 24)
         .frame(maxWidth: .infinity)

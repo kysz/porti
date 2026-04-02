@@ -2,11 +2,24 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct ProfileManagerView: View {
+    static let minimumListHeight: CGFloat = 120
+    static let cardHeight: CGFloat = 70
+    static let cardSpacing: CGFloat = 20
+    static let listTopPadding: CGFloat = 20
+    static let listHorizontalPadding: CGFloat = 20
+    static let listBottomPadding: CGFloat = 0
+
     @ObservedObject var appState: AppState
     var showsSaveButton: Bool = true
     @State private var draggedProfileID: UUID?
     @State private var dropIndicator: ProfileDropIndicator?
-    @State private var listContentHeight: CGFloat = 0
+
+    static func listHeight(forProfileCount count: Int) -> CGFloat {
+        let cardsHeight = CGFloat(count) * cardHeight
+        let gapsHeight = CGFloat(max(count - 1, 0)) * cardSpacing
+        let contentHeight = listTopPadding + listBottomPadding + cardsHeight + gapsHeight
+        return max(minimumListHeight, contentHeight)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -15,69 +28,35 @@ struct ProfileManagerView: View {
                     appState.promptAndSaveCurrentDock()
                 }
                 .keyboardShortcut(.defaultAction)
-
-                Divider()
             }
 
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 4) {
+                LazyVStack(alignment: .leading, spacing: 20) {
                     ForEach(Array(appState.profiles.enumerated()), id: \.element.id) { index, storedProfile in
-                        VStack(alignment: .leading, spacing: 0) {
-                            ProfileManagerRowView(
-                                appState: appState,
-                                storedProfile: storedProfile,
-                                draggedProfileID: $draggedProfileID,
-                                dropIndicator: $dropIndicator
-                            )
-
-                            if index < appState.profiles.count - 1 {
-                                Divider()
-                                    .padding(.leading, 28)
-                            }
-                        }
-                    }
-
-                    ZStack {
-                        Color.clear
-                            .frame(height: 18)
-
-                        if dropIndicator == .end {
-                            InsertionIndicator()
-                                .padding(.leading, 34)
-                        }
-                    }
-                        .onDrop(
-                            of: [UTType.text],
-                            delegate: ProfileDropToEndDelegate(
-                                appState: appState,
-                                draggedProfileID: $draggedProfileID,
-                                dropIndicator: $dropIndicator
-                            )
+                        ProfileManagerRowView(
+                            appState: appState,
+                            storedProfile: storedProfile,
+                            draggedProfileID: $draggedProfileID,
+                            dropIndicator: $dropIndicator
                         )
-                }
-                .padding(.vertical, 4)
-                .animation(.spring(response: 0.24, dampingFraction: 0.88), value: appState.profiles.map(\.id))
-                .background {
-                    GeometryReader { proxy in
-                        Color.clear
-                            .preference(key: ProfileListHeightPreferenceKey.self, value: proxy.size.height)
                     }
                 }
+                .padding(.top, Self.listTopPadding)
+                .padding(.horizontal, Self.listHorizontalPadding)
+                .padding(.bottom, Self.listBottomPadding)
+                .animation(.spring(response: 0.24, dampingFraction: 0.88), value: appState.profiles.map(\.id))
+                .onDrop(
+                    of: [UTType.text],
+                    delegate: ProfileDropToEndDelegate(
+                        appState: appState,
+                        draggedProfileID: $draggedProfileID,
+                        dropIndicator: $dropIndicator
+                    )
+                )
             }
-            .frame(height: max(listContentHeight, 120))
+            .frame(height: Self.listHeight(forProfileCount: appState.profiles.count))
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .onPreferenceChange(ProfileListHeightPreferenceKey.self) { newHeight in
-            listContentHeight = newHeight
-        }
-    }
-}
-
-private struct ProfileListHeightPreferenceKey: PreferenceKey {
-    static let defaultValue: CGFloat = 120
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
@@ -141,8 +120,22 @@ private struct ProfileManagerRowView: View {
                 }
             }
         }
-        .padding(.vertical, 8)
+        .padding(.top, 14)
+        .padding(.leading, 12)
+        .padding(.trailing, 14)
+        .padding(.bottom, 11)
+        .frame(height: ProfileManagerView.cardHeight, alignment: .topLeading)
         .frame(maxWidth: .infinity, alignment: .topLeading)
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color(
+                    .sRGB,
+                    red: 247.0 / 255.0,
+                    green: 247.0 / 255.0,
+                    blue: 247.0 / 255.0,
+                    opacity: 1
+                ))
+        }
         .background {
             GeometryReader { proxy in
                 Color.clear

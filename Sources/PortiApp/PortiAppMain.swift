@@ -38,7 +38,7 @@ struct PortiAppMain: App {
         }
         .defaultSize(
             width: PortiWindowTab.profiles.preferredWidth,
-            height: 560
+            height: PortiWindowTab.defaultHeight
         )
         .windowResizability(.contentSize)
 

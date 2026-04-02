@@ -5,6 +5,14 @@ enum PortiWindowTab: String, CaseIterable, Identifiable {
     case settings
     case about
 
+    static let defaultHeight: CGFloat = 580
+    static let settingsContentHeight: CGFloat = 400
+    static let settingsWindowHeight: CGFloat = 400
+    static let aboutWindowHeight: CGFloat = 150
+    static let profilesButtonGap: CGFloat = 20
+    static let profilesButtonRowHeight: CGFloat = 32
+    static let profilesBottomPadding: CGFloat = 20
+
     var id: Self { self }
 
     var title: String {
@@ -32,38 +40,51 @@ enum PortiWindowTab: String, CaseIterable, Identifiable {
     var preferredWidth: CGFloat {
         600
     }
+
+    var preferredHeight: CGFloat {
+        switch self {
+        case .settings:
+            return Self.settingsWindowHeight
+        case .about:
+            return Self.aboutWindowHeight
+        case .profiles:
+            return Self.defaultHeight
+        }
+    }
 }
 
 @MainActor
 struct PortiPreferencesView: View {
+    private static let resizeDuration: Double = 0.22
+
     @ObservedObject var appState: AppState
     @ObservedObject var appUpdater: AppUpdater
     @ObservedObject var selection: PreferencesSelection
 
     @State private var contentWidth: CGFloat = PortiWindowTab.profiles.preferredWidth
-    @State private var contentHeight: CGFloat = 560
-    @State private var measuredHeights: [PortiWindowTab: CGFloat] = [:]
+    @State private var contentHeight: CGFloat = PortiWindowTab.profiles.preferredHeight
+    @State private var isPaneContentVisible = true
+    @State private var pendingRevealWorkItem: DispatchWorkItem?
 
     var body: some View {
-        Group {
-            if #available(macOS 15.0, *) {
-                tabViewContent
-                    .toolbar(removing: .title)
-            } else {
-                tabViewContent
-            }
-        }
+        tabViewContent
     }
 
     private func updateLayout(for tab: PortiWindowTab, animate: Bool) {
-        let measuredHeight = measuredHeights[tab] ?? 520
+        let targetHeight: CGFloat = switch tab {
+        case .profiles:
+            Self.profilesWindowHeight(forProfileCount: appState.profiles.count)
+        case .settings, .about:
+            tab.preferredHeight
+        }
+
         let change = {
             contentWidth = tab.preferredWidth
-            contentHeight = measuredHeight
+            contentHeight = targetHeight
         }
 
         if animate {
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.85)) {
+            withAnimation(.easeInOut(duration: Self.resizeDuration)) {
                 change()
             }
         } else {
@@ -71,10 +92,32 @@ struct PortiPreferencesView: View {
         }
     }
 
+    private static func profilesWindowHeight(forProfileCount count: Int) -> CGFloat {
+        ProfileManagerView.listHeight(forProfileCount: count)
+            + PortiWindowTab.profilesButtonGap
+            + PortiWindowTab.profilesButtonRowHeight
+            + PortiWindowTab.profilesBottomPadding
+    }
+
+    private func beginTabTransition(to tab: PortiWindowTab) {
+        pendingRevealWorkItem?.cancel()
+
+        isPaneContentVisible = false
+        updateLayout(for: tab, animate: true)
+
+        let revealWorkItem = DispatchWorkItem {
+            isPaneContentVisible = true
+            pendingRevealWorkItem = nil
+        }
+
+        pendingRevealWorkItem = revealWorkItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.resizeDuration, execute: revealWorkItem)
+    }
+
     private var tabViewContent: some View {
         TabView(selection: $selection.tab) {
             PreferencesPaneContainer(
-                tab: .profiles,
+                showsContent: isPaneContentVisible,
                 warningMessage: appState.warningMessage,
                 errorMessage: appState.errorMessage,
                 clearMessages: appState.clearMessages
@@ -87,12 +130,13 @@ struct PortiPreferencesView: View {
             .tag(PortiWindowTab.profiles)
 
             PreferencesPaneContainer(
-                tab: .settings,
+                showsContent: isPaneContentVisible,
                 warningMessage: appState.warningMessage,
                 errorMessage: appState.errorMessage,
                 clearMessages: appState.clearMessages
             ) {
                 SettingsView(appState: appState, appUpdater: appUpdater)
+                    .frame(height: PortiWindowTab.settingsContentHeight, alignment: .topLeading)
             }
             .tabItem {
                 Label(PortiWindowTab.settings.title, systemImage: PortiWindowTab.settings.systemImage)
@@ -100,7 +144,7 @@ struct PortiPreferencesView: View {
             .tag(PortiWindowTab.settings)
 
             PreferencesPaneContainer(
-                tab: .about,
+                showsContent: isPaneContentVisible,
                 warningMessage: appState.warningMessage,
                 errorMessage: appState.errorMessage,
                 clearMessages: appState.clearMessages
@@ -112,25 +156,29 @@ struct PortiPreferencesView: View {
             }
             .tag(PortiWindowTab.about)
         }
-        .padding(20)
+        .padding(.horizontal, 0)
+        .padding(.vertical, 0)
         .frame(width: contentWidth, height: contentHeight)
         .background(WindowConfigurator())
         .onAppear {
             appState.refreshAll()
             updateLayout(for: selection.tab, animate: false)
+            isPaneContentVisible = true
         }
         .onChange(of: selection.tab) { newValue in
-            updateLayout(for: newValue, animate: true)
+            beginTabTransition(to: newValue)
         }
-        .onPreferenceChange(PreferencesPaneHeightPreferenceKey.self) { heights in
-            measuredHeights.merge(heights) { _, new in new }
-            updateLayout(for: selection.tab, animate: true)
+        .onChange(of: appState.profiles.map(\.id)) { _ in
+            guard selection.tab == .profiles else {
+                return
+            }
+            updateLayout(for: .profiles, animate: true)
         }
     }
 }
 
 private struct PreferencesPaneContainer<Content: View>: View {
-    let tab: PortiWindowTab
+    let showsContent: Bool
     let warningMessage: String?
     let errorMessage: String?
     let clearMessages: () -> Void
@@ -138,9 +186,6 @@ private struct PreferencesPaneContainer<Content: View>: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Divider()
-                .padding(.bottom, 20)
-
             if warningMessage != nil || errorMessage != nil {
                 WindowMessageBanner(
                     warningMessage: warningMessage,
@@ -152,37 +197,33 @@ private struct PreferencesPaneContainer<Content: View>: View {
 
             content()
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background {
-            GeometryReader { proxy in
-                Color.clear
-                    .preference(
-                        key: PreferencesPaneHeightPreferenceKey.self,
-                        value: [tab: proxy.size.height]
-                    )
-            }
-        }
+        .opacity(showsContent ? 1 : 0)
+        .allowsHitTesting(showsContent)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
 private struct ProfilesPreferencesPane: View {
+    private static let contentSpacing: CGFloat = PortiWindowTab.profilesButtonGap
+
     @ObservedObject var appState: AppState
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: Self.contentSpacing) {
             ProfileManagerView(appState: appState, showsSaveButton: false)
 
             HStack {
                 Spacer()
 
-                Button("Save Current Dock...") {
+                Button("Save Current Dock") {
                     appState.promptAndSaveCurrentDock()
                 }
                 .buttonStyle(.bordered)
             }
+            .padding(.trailing, 20)
         }
         .padding(.bottom, 20)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
@@ -221,14 +262,6 @@ private struct WindowMessageBanner: View {
     }
 }
 
-private struct PreferencesPaneHeightPreferenceKey: PreferenceKey {
-    static let defaultValue: [PortiWindowTab: CGFloat] = [:]
-
-    static func reduce(value: inout [PortiWindowTab: CGFloat], nextValue: () -> [PortiWindowTab: CGFloat]) {
-        value.merge(nextValue()) { _, new in new }
-    }
-}
-
 private struct WindowConfigurator: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
@@ -249,8 +282,9 @@ private struct WindowConfigurator: NSViewRepresentable {
             return
         }
 
-        window.title = ""
-        window.titleVisibility = .hidden
-        window.titlebarAppearsTransparent = true
+        window.title = "Porti"
+        window.titleVisibility = .visible
+        window.titlebarAppearsTransparent = false
+        window.toolbarStyle = .preference
     }
 }

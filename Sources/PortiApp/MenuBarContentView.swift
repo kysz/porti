@@ -42,20 +42,20 @@ struct MenuBarContentView: View {
             Button {
                 appState.promptAndSaveCurrentDock()
             } label: {
-                Label("Save Current Dock...", systemImage: "plus.square.on.square")
+                Text("Save Current Dock")
             }
             .keyboardShortcut(.defaultAction)
 
             Button {
                 appState.addSpacerToCurrentDock()
             } label: {
-                Label("Add Spacer to Dock", systemImage: "space")
+                Text("Add Spacer to Dock")
             }
 
             Button {
                 openSettings(tab: .profiles)
             } label: {
-                Label("Manage Profiles...", systemImage: "square.and.pencil")
+                Text("Manage Profiles")
             }
 
             Divider()
@@ -63,37 +63,37 @@ struct MenuBarContentView: View {
             Button {
                 openSettings(tab: .settings)
             } label: {
-                Label("Settings...", systemImage: "gearshape")
+                Text("Settings")
             }
 
             Button {
                 appUpdater.checkForUpdates()
             } label: {
-                Label("Check for Updates...", systemImage: "arrow.triangle.2.circlepath")
+                Text("Check for Updates")
             }
             .disabled(!appUpdater.isConfigured || !appUpdater.canCheckForUpdates)
 
             Button {
                 openSettings(tab: .about)
             } label: {
-                Label("About Porti", systemImage: "info.circle")
+                Text("About Porti")
             }
 
             if let warningMessage = appState.warningMessage {
                 Divider()
-                Label(warningMessage, systemImage: "exclamationmark.triangle")
+                Text(warningMessage)
             }
 
             if let errorMessage = appState.errorMessage {
                 Divider()
-                Label(errorMessage, systemImage: "xmark.octagon")
+                Text(errorMessage)
             }
 
             if appState.warningMessage != nil || appState.errorMessage != nil {
                 Button {
                     appState.clearMessages()
                 } label: {
-                    Label("Clear Messages", systemImage: "xmark")
+                    Text("Clear Messages")
                 }
             }
 
@@ -102,7 +102,7 @@ struct MenuBarContentView: View {
             Button {
                 NSApplication.shared.terminate(nil)
             } label: {
-                Label("Quit Porti", systemImage: "power")
+                Text("Quit Porti")
             }
             .keyboardShortcut("q")
         }
