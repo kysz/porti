@@ -26,13 +26,15 @@ Recommended URLs:
 
 ## One-Time Sparkle Setup
 
-Download a Sparkle release distribution from the Sparkle project and unpack it locally. Then run:
+Porti already vendors Sparkle through SwiftPM, so after one package build the
+Sparkle tools are available under `.build/artifacts/sparkle/Sparkle/bin`.
+Then run:
 
 ```bash
-./bin/generate_keys
+.build/artifacts/sparkle/Sparkle/bin/generate_keys
 ```
 
-This stores the private key in your login keychain and prints the public EdDSA key. Export the private key with `./bin/generate_keys -x /secure/path/porti_sparkle_private_key` and keep that file backed up separately.
+This stores the private key in your login keychain and prints the public EdDSA key. Export the private key with `.build/artifacts/sparkle/Sparkle/bin/generate_keys -x /secure/path/porti_sparkle_private_key` and keep that file backed up separately.
 
 ## Bundle Configuration
 
@@ -108,8 +110,9 @@ This repo includes `scripts/generate-appcast.sh` as a wrapper around Sparkle's `
 Example:
 
 ```bash
-SPARKLE_BIN_DIR="$HOME/tools/Sparkle/bin" \
+APPCAST_DOWNLOAD_URL_PREFIX="https://github.com/kysz/porti/releases/download/v0.1.12/" \
+APPCAST_LINK="https://github.com/kysz/porti" \
 ./scripts/generate-appcast.sh ./release-updates
 ```
 
-The script expects `generate_appcast` to already be available from an unpacked Sparkle distribution.
+By default, the script uses `.build/artifacts/sparkle/Sparkle/bin/generate_appcast`. Set `SPARKLE_BIN_DIR` only if you want to override that path.

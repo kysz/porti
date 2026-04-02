@@ -4,18 +4,17 @@ Use this checklist when shipping a Porti release.
 
 ## One-Time Setup
 
-1. Download and unpack a Sparkle release locally.
+1. Build the package once so SwiftPM fetches Sparkle into `.build/artifacts`.
 2. Generate or load the Sparkle keypair:
 
 ```bash
-cd /path/to/Sparkle
-./bin/generate_keys
+.build/artifacts/sparkle/Sparkle/bin/generate_keys
 ```
 
 3. Export the private key to a file you control:
 
 ```bash
-./bin/generate_keys -x /secure/path/porti_sparkle_private_key
+.build/artifacts/sparkle/Sparkle/bin/generate_keys -x /secure/path/porti_sparkle_private_key
 ```
 
 4. Record these values in your password manager or other secure storage:
@@ -33,18 +32,17 @@ shasum -a 256 /secure/path/porti_sparkle_private_key
 
 ## Restore On Another Machine
 
-1. Install or unpack the same Sparkle toolset.
+1. Build the package once so SwiftPM restores Sparkle under `.build/artifacts`.
 2. Import the saved private key:
 
 ```bash
-cd /path/to/Sparkle
-./bin/generate_keys -f /secure/path/porti_sparkle_private_key
+.build/artifacts/sparkle/Sparkle/bin/generate_keys -f /secure/path/porti_sparkle_private_key
 ```
 
-3. Verify that `./bin/generate_keys` prints the expected public key:
+3. Verify that `.build/artifacts/sparkle/Sparkle/bin/generate_keys` prints the expected public key:
 
 ```bash
-./bin/generate_keys
+.build/artifacts/sparkle/Sparkle/bin/generate_keys
 ```
 
 Expected public key:
@@ -97,10 +95,9 @@ rm -rf /tmp/porti-release-feed
 mkdir -p /tmp/porti-release-feed
 cp dist/Porti-0.1.12.zip /tmp/porti-release-feed/
 
-/path/to/Sparkle/bin/generate_appcast \
-  --download-url-prefix https://github.com/kysz/porti/releases/download/v0.1.12/ \
-  --link https://github.com/kysz/porti \
-  /tmp/porti-release-feed
+APPCAST_DOWNLOAD_URL_PREFIX="https://github.com/kysz/porti/releases/download/v0.1.12/" \
+APPCAST_LINK="https://github.com/kysz/porti" \
+./scripts/generate-appcast.sh /tmp/porti-release-feed
 ```
 
 8. Upload `appcast.xml` to the same release:
