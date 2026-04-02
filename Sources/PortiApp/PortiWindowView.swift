@@ -6,8 +6,8 @@ enum PortiWindowTab: String, CaseIterable, Identifiable {
     case about
 
     static let defaultHeight: CGFloat = 580
-    static let settingsContentHeight: CGFloat = 400
-    static let settingsWindowHeight: CGFloat = 400
+    static let settingsContentHeight: CGFloat = 583
+    static let settingsWindowHeight: CGFloat = settingsContentHeight
     static let aboutWindowHeight: CGFloat = 150
     static let profilesButtonGap: CGFloat = 20
     static let profilesButtonRowHeight: CGFloat = 32
@@ -284,6 +284,7 @@ private struct WindowConfigurator: NSViewRepresentable {
 
     final class Coordinator {
         var lastAppliedRevision = -1
+        var didBringWindowToFront = false
     }
 
     func makeCoordinator() -> Coordinator {
@@ -313,6 +314,13 @@ private struct WindowConfigurator: NSViewRepresentable {
         window.titleVisibility = .visible
         window.titlebarAppearsTransparent = false
         window.toolbarStyle = .preference
+
+        if !coordinator.didBringWindowToFront {
+            coordinator.didBringWindowToFront = true
+            NSApp.activate(ignoringOtherApps: true)
+            window.orderFrontRegardless()
+            window.makeKeyAndOrderFront(nil)
+        }
 
         guard coordinator.lastAppliedRevision != resizeRevision else {
             return

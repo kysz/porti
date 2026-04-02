@@ -26,6 +26,7 @@ final class AppState: ObservableObject {
     @Published var quitOtherApplicationsOnApply: Bool
     @Published var showNotifications: Bool
     @Published var launchAtLogin: Bool
+    @Published private(set) var activeFocusProfileName: String?
 
     let dockStore = DockPreferencesStore()
     let profileStore = ProfileStore()
@@ -39,6 +40,8 @@ final class AppState: ObservableObject {
     private let launchAtLoginController = LaunchAtLoginController()
     private let notificationController = NotificationController()
     private var refreshTimer: Timer?
+    private var lastObservedFocusProfileID: String?
+    private var focusSelectionRefreshInFlight = false
 
     init() {
         let defaultPreferences = AppPreferences.default
@@ -58,6 +61,7 @@ final class AppState: ObservableObject {
             profiles = orderedProfiles(from: loadedProfiles)
 
             try refreshActiveState()
+            refreshFocusSelection()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -122,24 +126,7 @@ final class AppState: ObservableObject {
     }
 
     func apply(_ storedProfile: StoredProfile) {
-        if confirmBeforeApply && !confirmApply(named: storedProfile.profile.name) {
-            return
-        }
-
-        do {
-            let report = try dockStore.apply(profile: storedProfile.profile)
-            let quitReport = quitOtherApplicationsOnApply ? requestQuitForApplicationsNotInProfile(storedProfile.profile) : QuitRequestReport()
-            defaults.set(storedProfile.url.path, forKey: lastAppliedProfilePathKey)
-            showFeedback(
-                inlineWarning: warningText(for: report, quitReport: quitReport),
-                inlineError: nil,
-                notificationTitle: notificationTitle(for: report, quitReport: quitReport),
-                notificationBody: notificationText(forAppliedProfile: storedProfile.profile.name, report: report, quitReport: quitReport)
-            )
-            try refreshActiveState()
-        } catch {
-            presentError(error)
-        }
+        apply(storedProfile, trigger: .manual)
     }
 
     func addSpacerToCurrentDock() {
@@ -348,6 +335,34 @@ final class AppState: ObservableObject {
         defaults.set(showNotifications, forKey: showNotificationsKey)
     }
 
+    private func apply(_ storedProfile: StoredProfile, trigger: DockApplyTrigger) {
+        if trigger.requiresConfirmation,
+           confirmBeforeApply,
+           !confirmApply(named: storedProfile.profile.name) {
+            return
+        }
+
+        do {
+            let report = try dockStore.apply(profile: storedProfile.profile)
+            let quitReport = quitOtherApplicationsOnApply ? requestQuitForApplicationsNotInProfile(storedProfile.profile) : QuitRequestReport()
+            defaults.set(storedProfile.url.path, forKey: lastAppliedProfilePathKey)
+            showFeedback(
+                inlineWarning: warningText(for: report, quitReport: quitReport),
+                inlineError: nil,
+                notificationTitle: notificationTitle(for: report, quitReport: quitReport, trigger: trigger),
+                notificationBody: notificationText(
+                    forAppliedProfile: storedProfile.profile.name,
+                    report: report,
+                    quitReport: quitReport,
+                    trigger: trigger
+                )
+            )
+            try refreshActiveState()
+        } catch {
+            presentError(error)
+        }
+    }
+
     private func refreshActiveState() throws {
         guard let path = defaults.string(forKey: lastAppliedProfilePathKey) else {
             activeProfileLabel = "Unknown"
@@ -461,20 +476,25 @@ final class AppState: ObservableObject {
         return parts.isEmpty ? nil : parts.joined(separator: "\n")
     }
 
-    private func notificationTitle(for report: DockApplyReport, quitReport: QuitRequestReport) -> String {
+    private func notificationTitle(for report: DockApplyReport, quitReport: QuitRequestReport, trigger: DockApplyTrigger) -> String {
         if !report.skippedItems.isEmpty {
-            return "Profile Applied With Skips"
+            return trigger == .focusMode ? "Focus Mode Applied With Skips" : "Profile Applied With Skips"
         }
 
         if !quitReport.requestedApplications.isEmpty {
-            return "Profile Applied And Closing Apps"
+            return trigger == .focusMode ? "Focus Mode Applied And Closing Apps" : "Profile Applied And Closing Apps"
         }
 
-        return "Profile Applied"
+        return trigger == .focusMode ? "Focus Mode Applied" : "Profile Applied"
     }
 
-    private func notificationText(forAppliedProfile name: String, report: DockApplyReport, quitReport: QuitRequestReport) -> String {
-        var parts = ["Applied \(name)."]
+    private func notificationText(
+        forAppliedProfile name: String,
+        report: DockApplyReport,
+        quitReport: QuitRequestReport,
+        trigger: DockApplyTrigger
+    ) -> String {
+        var parts = [trigger == .focusMode ? "Applied \(name) for the active Focus mode." : "Applied \(name)."]
 
         if !report.skippedItems.isEmpty {
             let names = report.skippedItems.map { $0.label ?? $0.path ?? "Unnamed item" }
@@ -486,6 +506,55 @@ final class AppState: ObservableObject {
         }
 
         return parts.joined(separator: " ")
+    }
+
+    private func refreshFocusSelection() {
+        guard !focusSelectionRefreshInFlight else {
+            return
+        }
+
+        focusSelectionRefreshInFlight = true
+
+        Task { [weak self] in
+            let selection = await PortiFocusSelectionResolver.currentSelection()
+
+            await MainActor.run {
+                guard let self else {
+                    return
+                }
+
+                self.focusSelectionRefreshInFlight = false
+                self.handleFocusSelection(selection)
+            }
+        }
+    }
+
+    private func handleFocusSelection(_ selection: PortiFocusSelection?) {
+        activeFocusProfileName = selection?.profileName
+
+        let selectedProfileID = selection?.profileID
+        guard selectedProfileID != lastObservedFocusProfileID else {
+            return
+        }
+        lastObservedFocusProfileID = selectedProfileID
+
+        guard let selectedProfileID,
+              let storedProfile = profiles.first(where: { $0.id.uuidString == selectedProfileID }) else {
+            return
+        }
+
+        do {
+            if try dockStore.state(relativeTo: storedProfile.profile) == .active {
+                defaults.set(storedProfile.url.path, forKey: lastAppliedProfilePathKey)
+                try refreshActiveState()
+                return
+            }
+        } catch {
+            presentError(error)
+            return
+        }
+
+        apply(storedProfile, trigger: .focusMode)
     }
 
     private func showFeedback(
@@ -585,5 +654,19 @@ private struct QuitRequestReport {
 
     init(requestedApplications: [String] = []) {
         self.requestedApplications = requestedApplications
+    }
+}
+
+private enum DockApplyTrigger {
+    case manual
+    case focusMode
+
+    var requiresConfirmation: Bool {
+        switch self {
+        case .manual:
+            return true
+        case .focusMode:
+            return false
+        }
     }
 }

@@ -36,6 +36,23 @@ struct SettingsView: View {
 
             Divider()
 
+            SettingsSectionCard("Focus Mode") {
+                Text("Assign Porti profiles from macOS Focus settings to switch Dock layouts automatically.")
+                    .font(.body)
+
+                SettingsCaption("Set this up in System Settings > Focus > a Focus mode > Focus Filters > Porti, then choose the Dock profile for that Focus.")
+
+                if let activeFocusProfileName = appState.activeFocusProfileName {
+                    SettingsCaption("Current Porti Focus profile: \(activeFocusProfileName)")
+                } else {
+                    SettingsCaption("No Porti Focus filter is active right now.")
+                }
+
+                SettingsCaption("Automatic Focus-driven switching only works while Porti is running. Enable Launch at login if you want it available after sign-in.")
+            }
+
+            Divider()
+
             SettingsSectionCard(
                 "Updates",
                 headerAccessory: {

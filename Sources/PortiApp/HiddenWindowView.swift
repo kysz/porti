@@ -30,6 +30,7 @@ private struct SettingsBridgeView: View {
                 }
 
                 Task { @MainActor in
+                    NSApp.activate(ignoringOtherApps: true)
                     openSettings()
                 }
             }
@@ -67,6 +68,7 @@ private struct SettingsBridgeView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
             selection.tab = requestedTab
             Task { @MainActor in
+                NSApp.activate(ignoringOtherApps: true)
                 openSettings()
             }
 
