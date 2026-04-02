@@ -62,32 +62,32 @@ rebuild for normal releases.
 2. Build the release bundle locally:
 
 ```bash
-PORTI_VERSION="0.1.11" \
-PORTI_BUILD="0001011" \
+PORTI_VERSION="0.1.12" \
+PORTI_BUILD="0001012" \
 ./scripts/package-app.sh
 ```
 
 3. Verify the exact artifact you are about to ship:
 
 ```bash
-shasum -a 256 dist/Porti-0.1.11.zip
+shasum -a 256 dist/Porti-0.1.12.zip
 ```
 
 4. Commit the release changes and push `main`.
 5. Create and push the release tag:
 
 ```bash
-git tag -a v0.1.11 -m "v0.1.11"
-git push origin v0.1.11
+git tag -a v0.1.12 -m "v0.1.12"
+git push origin v0.1.12
 ```
 
 6. Create the GitHub release from the local zip, not from CI:
 
 ```bash
-gh release create v0.1.11 \
-  dist/Porti-0.1.11.zip \
+gh release create v0.1.12 \
+  dist/Porti-0.1.12.zip \
   --generate-notes \
-  --title v0.1.11
+  --title v0.1.12
 ```
 
 7. Generate Sparkle metadata from that same local zip:
@@ -95,10 +95,10 @@ gh release create v0.1.11 \
 ```bash
 rm -rf /tmp/porti-release-feed
 mkdir -p /tmp/porti-release-feed
-cp dist/Porti-0.1.11.zip /tmp/porti-release-feed/
+cp dist/Porti-0.1.12.zip /tmp/porti-release-feed/
 
 /path/to/Sparkle/bin/generate_appcast \
-  --download-url-prefix https://github.com/kysz/porti/releases/download/v0.1.11/ \
+  --download-url-prefix https://github.com/kysz/porti/releases/download/v0.1.12/ \
   --link https://github.com/kysz/porti \
   /tmp/porti-release-feed
 ```
@@ -106,14 +106,14 @@ cp dist/Porti-0.1.11.zip /tmp/porti-release-feed/
 8. Upload `appcast.xml` to the same release:
 
 ```bash
-gh release upload v0.1.11 /tmp/porti-release-feed/appcast.xml --clobber
+gh release upload v0.1.12 /tmp/porti-release-feed/appcast.xml --clobber
 ```
 
 9. Verify the uploaded release asset still matches the local zip:
 
 ```bash
-gh release view v0.1.11 --json assets
-shasum -a 256 dist/Porti-0.1.11.zip
+gh release view v0.1.12 --json assets
+shasum -a 256 dist/Porti-0.1.12.zip
 ```
 
 10. Verify the public feed resolves and points at the tagged asset:
