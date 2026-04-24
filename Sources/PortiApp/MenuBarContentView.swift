@@ -7,6 +7,67 @@ struct MenuBarContentView: View {
     @ObservedObject var preferencesSelection: PreferencesSelection
 
     var body: some View {
+        if #available(macOS 14.0, *) {
+            MenuBarContentWithOpenSettings(
+                appState: appState,
+                appUpdater: appUpdater,
+                preferencesSelection: preferencesSelection
+            )
+        } else {
+            MenuBarContentWithFallbackSettings(
+                appState: appState,
+                appUpdater: appUpdater,
+                preferencesSelection: preferencesSelection
+            )
+        }
+    }
+}
+
+@available(macOS 14.0, *)
+private struct MenuBarContentWithOpenSettings: View {
+    @Environment(\.openSettings) private var openSettings
+
+    @ObservedObject var appState: AppState
+    @ObservedObject var appUpdater: AppUpdater
+    @ObservedObject var preferencesSelection: PreferencesSelection
+
+    var body: some View {
+        MenuBarItemsView(
+            appState: appState,
+            appUpdater: appUpdater,
+            preferencesSelection: preferencesSelection
+        ) { tab in
+            preferencesSelection.tab = tab
+            NSApp.activate(ignoringOtherApps: true)
+            openSettings()
+        }
+    }
+}
+
+private struct MenuBarContentWithFallbackSettings: View {
+    @ObservedObject var appState: AppState
+    @ObservedObject var appUpdater: AppUpdater
+    @ObservedObject var preferencesSelection: PreferencesSelection
+
+    var body: some View {
+        MenuBarItemsView(
+            appState: appState,
+            appUpdater: appUpdater,
+            preferencesSelection: preferencesSelection
+        ) { tab in
+            preferencesSelection.tab = tab
+            PortiSettingsPresenter.showFallback()
+        }
+    }
+}
+
+private struct MenuBarItemsView: View {
+    @ObservedObject var appState: AppState
+    @ObservedObject var appUpdater: AppUpdater
+    @ObservedObject var preferencesSelection: PreferencesSelection
+    let openSettings: (PortiWindowTab) -> Void
+
+    var body: some View {
         Group {
             Text("Active: \(appState.activeProfileLabel)")
 
@@ -53,7 +114,7 @@ struct MenuBarContentView: View {
             }
 
             Button {
-                openSettings(tab: .profiles)
+                openSettings(.profiles)
             } label: {
                 Text("Manage Profiles")
             }
@@ -61,7 +122,7 @@ struct MenuBarContentView: View {
             Divider()
 
             Button {
-                openSettings(tab: .settings)
+                openSettings(.settings)
             } label: {
                 Text("Settings")
             }
@@ -74,7 +135,7 @@ struct MenuBarContentView: View {
             .disabled(!appUpdater.isConfigured || !appUpdater.canCheckForUpdates)
 
             Button {
-                openSettings(tab: .about)
+                openSettings(.about)
             } label: {
                 Text("About Porti")
             }
@@ -109,10 +170,5 @@ struct MenuBarContentView: View {
         .onAppear {
             appState.refreshAll()
         }
-    }
-
-    private func openSettings(tab: PortiWindowTab) {
-        preferencesSelection.tab = tab
-        PortiSettingsPresenter.request(tab: tab)
     }
 }

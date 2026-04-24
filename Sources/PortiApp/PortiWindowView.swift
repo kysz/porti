@@ -311,6 +311,7 @@ private struct WindowConfigurator: NSViewRepresentable {
         }
 
         window.toolbarStyle = .preference
+        window.level = .floating
 
         if !coordinator.didBringWindowToFront {
             coordinator.didBringWindowToFront = true
